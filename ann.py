@@ -23,19 +23,24 @@ class ANN:
 
     # sigmoid threshold function 1/(1+e^-x)
     def sigmoid(self, x):
-        return 1 / (1 + np.exp(-x))
+        return 1.0 / (1.0 + np.exp(-x))
 
     # derivative of the sigmoid function
     def dsigmoid(self, y):
-        return y * (1 - y)
+        return y * (1.0 - y)
 
+    def activation(self, a, w, b):
+        return self.sigmoid(sum(np.dot(a, w)) + b[0])
 
-    def feed_forward(self, input):
+    def forward_propagate(self, input):
         if len(input) != self.num_input:
             raise ValueError('Incorrect number of inputs.')
         for i in range(self.num_hidden):
-            self.activation_hidden.append(sum(self.sigmoid(np.dot(float(input[i]), self.weight_input[i]) + self.bias_hidden[i])))
+            self.activation_hidden.append(self.activation(float(input[i]), self.weight_input[i], self.bias_hidden[i]))
         print(self.activation_hidden)
         for j in range(self.num_output):
-            self.activation_output.append(sum(self.sigmoid(np.dot(self.activation_hidden[j], self.weight_hidden[j]) + self.bias_output[j])))
+            self.activation_output.append(self.activation(self.activation_hidden[j], self.weight_hidden[j], self.bias_output[j]))
         print(self.activation_output)
+
+    def back_propagation(self, output):
+        return

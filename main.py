@@ -15,7 +15,6 @@ def main():
         return output.index(max(output))
 
 
-
     #%% Train
     with open("csv/train.csv") as file:
         file.readline()
@@ -35,10 +34,9 @@ def main():
         #     # print(result(Output.tolist()[0]))
 
             network = ann.ANN(784, 15, 10)
-            network.feed_forward(line[1:])
+            network.forward_propagate(line[1:])
             break
 
-#%%
 
 if __name__ == "__main__":
     main()
