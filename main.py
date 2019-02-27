@@ -1,41 +1,44 @@
-#%%
 import csv
 import numpy
 import ann
 # from matplotlib import pyplot as plt
 
-def main():
-    input_layer_weight = numpy.random.rand(785,15)*numpy.random.choice([-1,1], (785,15))
-    hiden_layer_weight = numpy.random.rand(16,10)*numpy.random.choice([-1,1], (16,10))
 
-    def sigmoid(Z):
-        return 1/(1+numpy.exp(-Z))
-
-    def result(output):
-        return output.index(max(output))
-
-
-    #%% Train
-    with open("csv/train.csv") as file:
+def process_csv(func,path,*args):
+    with open(path) as file:
         file.readline()
-        train = csv.reader(file)
-        for line in train:
-        #     # print(line)
-        #     label = int(line[0])
-        #     expect = ([0]*10)
-        #     expect[label] = 1
-        #     pixel = [[int(i) for i in line[1:]]]
-        #     # plt.imshow(numpy.reshape(numpy.asarray(pixel),(28,28)))
-        #     # plt.show()
-        #     Input = numpy.insert(numpy.asarray(pixel)/255,0,1,axis = 1)
-        #     # print(Input)
-        #     Output = sigmoid(numpy.dot(numpy.insert(numpy.dot(Input,input_layer_weight),0,1,axis = 1),hiden_layer_weight))
-        #     # print(Output)
-        #     # print(result(Output.tolist()[0]))
+        data = csv.reader(file)
+        for row in data:
+            func(row,*args)
 
-            network = ann.ANN(784, 15, 10)
-            network.forward_propagate(line[1:])
-            break
+
+def train(example,network):
+    network.forward_propagate(example[1:])
+
+def recognize(item,network):
+    network.forward_propagate(item)
+
+# def train():
+#     with open("csv/train.csv") as training_set:
+#         training_set.readline()
+#         training_examples = csv.reader(training_set)
+#         for example in training_examples:
+#             network = ann.ANN(784, 15, 10)
+#             network.feed_forward(example[1:])
+
+# def recognize():
+#     with open("csv/test.csv") as test_set:
+#         test_set.readline()
+#         test_items = csv.reader(test_set)
+#         for item in test_items:
+#             network.feed_forward(item[1:])
+
+
+def main():
+    network = ann.ANN(784, 15, 10)
+    process_csv(train,"csv/train.csv",network)
+
+
 
 
 if __name__ == "__main__":

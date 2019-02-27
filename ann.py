@@ -12,13 +12,12 @@ class ANN:
         self.weight_hidden = np.random.randn(self.num_hidden, self.num_output) * np.random.choice([-1, 1], (self.num_hidden, self.num_output))
         # print(self.weight_hidden)
 
-        self.bias_hidden = np.random.randn(self.num_input, 1) * np.random.choice([-1, 1], (self.num_input, 1))
+        self.bias_hidden = np.random.randn(1, self.num_hidden) * np.random.choice([-1, 1], (1, self.num_hidden))
+        # v1 self.bias_hidden = np.random.randn(self.num_input, 1) * np.random.choice([-1, 1], (self.num_input, 1))
         # print(self.bias_hidden)
-        self.bias_output = np.random.randn(self.num_hidden, 1) * np.random.choice([-1, 1], (self.num_hidden, 1))
+        self.bias_output = np.random.randn(1, self.num_output) * np.random.choice([-1, 1], (1, self.num_output))
+        # v1 self.bias_output = np.random.randn(self.num_hidden, 1) * np.random.choice([-1, 1], (self.num_hidden, 1))
         # print(self.bias_output)
-
-        self.activation_hidden = []
-        self.activation_output = []
 
 
     # sigmoid threshold function 1/(1+e^-x)
@@ -29,18 +28,28 @@ class ANN:
     def dsigmoid(self, y):
         return y * (1.0 - y)
 
+    # def activation(self, a, w, b):
+    #     return self.sigmoid(np.dot(a, w) + b)
     def activation(self, a, w, b):
-        return self.sigmoid(sum(np.dot(a, w)) + b[0])
+        # v1 return self.sigmoid(sum(a*w) + b)
+        return self.sigmoid(np.dot(a,w) + b)
 
     def forward_propagate(self, input):
         if len(input) != self.num_input:
             raise ValueError('Incorrect number of inputs.')
-        for i in range(self.num_hidden):
-            self.activation_hidden.append(self.activation(float(input[i]), self.weight_input[i], self.bias_hidden[i]))
-        print(self.activation_hidden)
-        for j in range(self.num_output):
-            self.activation_output.append(self.activation(self.activation_hidden[j], self.weight_hidden[j], self.bias_output[j]))
-        print(self.activation_output)
+        activation_hidden = self.activation([[float(n)/255 for n in input]], self.weight_input, self.bias_hidden)
+        # v1 activation_hidden = []
+        # v1 for i in range(self.num_input):
+        # v1    activation_hidden.append(self.activation(float(input[i]), self.weight_input[i], self.bias_hidden[i]))
+        #print(activation_hidden)
+        activation_output = self.activation(activation_hidden, self.weight_hidden, self.bias_output)
+        # v1 activation_output = []
+        # v1 for j in range(self.num_hidden):
+        # v1    activation_output.append(self.activation(activation_hidden[j], self.weight_hidden[j], self.bias_output[j]))
+        #print(activation_output)
+        # v1 result = activation_output
+        result = activation_output.tolist()[0]
+        print(result.index(max(result)))
 
     def back_propagation(self, output):
         return
