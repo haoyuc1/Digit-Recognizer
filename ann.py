@@ -53,10 +53,13 @@ class ANN:
         while True:
             self.forward_propagate(input)
             print(self.a_output)
+            # 终止条件 - 不够全面需要修改
             if self.a_output[0][output] > self.threshold:
                 break
+            # 计算delta
             self.d_output = np.array([x - y for x, y in zip(actual, self.a_output)])
             self.d_hidden =  self.d_activation(self.a_hidden, self.w_hidden, self.b_output) * self.d_output
             self.d_input = self.d_activation(self.a_input, self.w_input, self.b_hidden) * sum([x * y for x , y in zip(self.w_input, self.d_hidden[0])])
+            # 更新weights
             self.w_input = self.w_input + self.alpha * np.dot(self.d_input.T, self.a_input).T
             self.w_hidden = self.w_hidden + self.alpha * np.dot(self.d_hidden.T, self.a_hidden).T
