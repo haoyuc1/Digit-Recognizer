@@ -9,14 +9,17 @@ def process_csv(func,path,*args):
         file.readline()
         data = csv.reader(file)
         for row in data:
-            func(row,*args)
+            func(row, *args)
+            break
 
 
 def train(example,network):
-    network.forward_propagate(example[1:])
+    input = [float(i) / 255.0 for i in example[1:]]
+    output = int(example[0])
+    network.back_propagate(input, output)
 
 def recognize(item,network):
-    network.forward_propagate(item)
+    network.back_propagate(item)
 
 # def train():
 #     with open("csv/train.csv") as training_set:

@@ -1,55 +1,62 @@
 import numpy as np
 
 class ANN:
-    def __init__(self, num_input, num_hidden, num_output):
+    def __init__(self, num_input, num_hidden, num_output, learning_rate = 0.2, threshold = 0.97):
         # Number of nodes in input, hidden, and output layers
         self.num_input = num_input
         self.num_hidden = num_hidden
         self.num_output = num_output
 
-        self.weight_input = np.random.randn(self.num_input, self.num_hidden) * np.random.choice([-1, 1], (self.num_input, self.num_hidden))
-        # print(self.weight_input)
-        self.weight_hidden = np.random.randn(self.num_hidden, self.num_output) * np.random.choice([-1, 1], (self.num_hidden, self.num_output))
-        # print(self.weight_hidden)
+        self.alpha = learning_rate
+        self.threshold = threshold
 
-        self.bias_hidden = np.random.randn(1, self.num_hidden) * np.random.choice([-1, 1], (1, self.num_hidden))
-        # v1 self.bias_hidden = np.random.randn(self.num_input, 1) * np.random.choice([-1, 1], (self.num_input, 1))
-        # print(self.bias_hidden)
-        self.bias_output = np.random.randn(1, self.num_output) * np.random.choice([-1, 1], (1, self.num_output))
-        # v1 self.bias_output = np.random.randn(self.num_hidden, 1) * np.random.choice([-1, 1], (self.num_hidden, 1))
-        # print(self.bias_output)
+        self.w_input = np.random.randn(self.num_input, self.num_hidden) * np.random.choice([-1, 1], (self.num_input, self.num_hidden))
+        # print(self.w_input)
+        self.w_hidden = np.random.randn(self.num_hidden, self.num_output) * np.random.choice([-1, 1], (self.num_hidden, self.num_output))
+        # print(self.w_hidden)
 
+        self.b_hidden = np.random.randn(1, self.num_hidden) * np.random.choice([-1, 1], (1, self.num_hidden))
+        # print(self.b_hidden)
+        self.b_output = np.random.randn(1, self.num_output) * np.random.choice([-1, 1], (1, self.num_output))
+        # print(self.b_output)
+        
+        self.a_input = []
+        self.a_hidden = []
+        self.a_output = []
+
+        self.d_input = []
+        self.d_hidden = []
+        self.d_output = []
 
     # sigmoid threshold function 1/(1+e^-x)
     def sigmoid(self, x):
         return 1.0 / (1.0 + np.exp(-x))
 
     # derivative of the sigmoid function
-    def dsigmoid(self, y):
+    def d_sigmoid(self, y):
         return y * (1.0 - y)
 
-    # def activation(self, a, w, b):
-    #     return self.sigmoid(np.dot(a, w) + b)
     def activation(self, a, w, b):
-        # v1 return self.sigmoid(sum(a*w) + b)
-        return self.sigmoid(np.dot(a,w) + b)
+        return self.sigmoid(np.dot(a, w) + b)
+
+    def d_activation(self, a, w, b):
+        return self.d_sigmoid(np.dot(a, w) + b)
 
     def forward_propagate(self, input):
-        if len(input) != self.num_input:
-            raise ValueError('Incorrect number of inputs.')
-        activation_hidden = self.activation([[float(n)/255 for n in input]], self.weight_input, self.bias_hidden)
-        # v1 activation_hidden = []
-        # v1 for i in range(self.num_input):
-        # v1    activation_hidden.append(self.activation(float(input[i]), self.weight_input[i], self.bias_hidden[i]))
-        #print(activation_hidden)
-        activation_output = self.activation(activation_hidden, self.weight_hidden, self.bias_output)
-        # v1 activation_output = []
-        # v1 for j in range(self.num_hidden):
-        # v1    activation_output.append(self.activation(activation_hidden[j], self.weight_hidden[j], self.bias_output[j]))
-        #print(activation_output)
-        # v1 result = activation_output
-        result = activation_output.tolist()[0]
-        print(result.index(max(result)))
+        self.a_input = [np.array(input)]
+        self.a_hidden = self.activation(self.a_input, self.w_input, self.b_hidden)
+        self.a_output = self.activation(self.a_hidden, self.w_hidden, self.b_output)
 
-    def back_propagation(self, output):
-        return
+    def back_propagate(self, input, output):
+        actual = [0] * 10
+        actual[output] = 1
+        while True:
+            self.forward_propagate(input)
+            print(self.a_output)
+            if self.a_output[0][output] > self.threshold:
+                break
+            self.d_output = np.array([x - y for x, y in zip(actual, self.a_output)])
+            self.d_hidden =  self.d_activation(self.a_hidden, self.w_hidden, self.b_output) * self.d_output
+            self.d_input = self.d_activation(self.a_input, self.w_input, self.b_hidden) * sum([x * y for x , y in zip(self.w_input, self.d_hidden[0])])
+            self.w_input = self.w_input + self.alpha * np.dot(self.d_input.T, self.a_input).T
+            self.w_hidden = self.w_hidden + self.alpha * np.dot(self.d_hidden.T, self.a_hidden).T
