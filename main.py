@@ -10,36 +10,32 @@ def process_csv(func,path,*args):
         data = csv.reader(file)
         for row in data:
             func(row, *args)
-            break
 
 
-def train(example,network):
+def train(example,network,error):
     input = [float(i) / 255.0 for i in example[1:]]
     output = int(example[0])
-    network.back_propagate(input, output)
+    predict = network.forward_propagate(input)
+    error.append(network.error(predict,output))
+    network.back_propagate(output)
 
 def recognize(item,network):
     network.back_propagate(item)
 
-# def train():
-#     with open("csv/train.csv") as training_set:
-#         training_set.readline()
-#         training_examples = csv.reader(training_set)
-#         for example in training_examples:
-#             network = ann.ANN(784, 15, 10)
-#             network.feed_forward(example[1:])
-
-# def recognize():
-#     with open("csv/test.csv") as test_set:
-#         test_set.readline()
-#         test_items = csv.reader(test_set)
-#         for item in test_items:
-#             network.feed_forward(item[1:])
-
 
 def main():
     network = ann.ANN(784, 15, 10)
-    process_csv(train,"csv/train.csv",network)
+    for i in range(10):
+        error = []
+        process_csv(train,"csv/train.csv",network,error)
+        D_hidden = network.d_hidden/len(error)
+        #print(D_hidden)
+        D_input = network.d_input/len(error)
+        #print(D_input)
+        cost = sum(error)/len(error)
+        print(cost)
+        network.gradientDescent(D_input,D_hidden)
+        network.resetD()
 
 
 
