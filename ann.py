@@ -11,9 +11,9 @@ class ANN:
         self.lamba = lamba
         self.threshold = threshold
 
-        self.w_input = np.random.randn(self.num_input, self.num_hidden) * np.random.choice([-1, 1], (self.num_input, self.num_hidden))
+        self.w_input = np.random.randn(self.num_input+1, self.num_hidden) * np.random.choice([-1, 1], (self.num_input+1, self.num_hidden))
         # print(self.w_input)
-        self.w_hidden = np.random.randn(self.num_hidden, self.num_output) * np.random.choice([-1, 1], (self.num_hidden, self.num_output))
+        self.w_hidden = np.random.randn(self.num_hidden+1, self.num_output) * np.random.choice([-1, 1], (self.num_hidden+1, self.num_output))
         # print(self.w_hidden)
 
         self.b_hidden = np.random.randn(1, self.num_hidden) * np.random.choice([-1, 1], (1, self.num_hidden))
@@ -25,8 +25,8 @@ class ANN:
         self.a_hidden = []
         self.a_output = []
 
-        self.d_input = np.zeros((self.num_input, self.num_hidden))
-        self.d_hidden = np.zeros((self.num_hidden, self.num_output))
+        self.d_input = np.zeros((self.num_input+1, self.num_hidden))
+        self.d_hidden = np.zeros((self.num_hidden+1, self.num_output))
 
 
     # sigmoid threshold function 1/(1+e^-x)
@@ -43,16 +43,17 @@ class ANN:
     def d_sigmoid(self, a):
         return a * (1.0 - a)
 
-    def activation(self, a, w, b):
-        return self.sigmoid(np.dot(a, w) + b)
+    def activation(self, a, w):
+        return self.sigmoid(np.dot(a, w))
 
-    def d_activation(self, a, w, b):
-        return self.d_sigmoid(np.dot(a, w) + b)
+    def d_activation(self, a, w):
+        return self.d_sigmoid(np.dot(a, w))
 
     def forward_propagate(self, input):
-        self.a_input = [np.array(input)]
-        self.a_hidden = self.activation(self.a_input, self.w_input, self.b_hidden)
-        self.a_output = self.activation(self.a_hidden, self.w_hidden, self.b_output)
+        self.a_input = [np.array(input+[1])]
+        self.a_hidden = self.activation(self.a_input, self.w_input)
+        self.a_hidden = np.array(np.append(self.a_hidden.transpose(),[[1]]).transpose())
+        self.a_output = self.activation(self.a_hidden, self.w_hidden)
         return self.a_output
 
     def back_propagate(self, label):
@@ -60,8 +61,8 @@ class ANN:
         actual[label] = 1
         delta3 = self.a_output - actual
         delta2 = np.dot(self.w_hidden,delta3.transpose()).transpose()*self.a_hidden*(1-self.a_hidden)
-        self.d_hidden += np.dot(self.a_hidden.transpose(),delta3)
-        self.d_input += np.dot(np.array(self.a_input).transpose(),delta2)
+        self.d_hidden += np.dot(self.a_hidden[:,None],delta3[None,:])
+        self.d_input += np.dot(np.array(self.a_input).transpose(),delta2[None,0:15])
         # actual = [0] * 10
         # actual[output] = 1
         # while True:
@@ -78,8 +79,8 @@ class ANN:
         #     self.w_input = self.w_input + self.alpha * np.dot(self.d_input.T, self.a_input).T
         #     self.w_hidden = self.w_hidden + self.alpha * np.dot(self.d_hidden.T, self.a_hidden).T
     def gradientDescent(self,D_input,D_hidden):
-        self.w_input-=self.alpha*D_input
+        self.w_input-=self.alpha*D_input[:,0:15]
         self.w_hidden-=self.alpha*D_hidden
     def resetD(self):
-        self.d_input = np.zeros((self.num_input, self.num_hidden))
-        self.d_hidden = np.zeros((self.num_hidden, self.num_output))
+        self.d_input = np.zeros((self.num_input+1, self.num_hidden))
+        self.d_hidden = np.zeros((self.num_hidden+1, self.num_output))
