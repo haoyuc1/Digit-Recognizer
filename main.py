@@ -1,11 +1,12 @@
 import csv
 import numpy
 import ann
-# from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
 
 
 def showresult(result):
     result = result.tolist()
+    print(result)
     print(result.index(max(result)))
 
 
@@ -26,15 +27,20 @@ def train(example, network, error):
 
 
 def recognize(item, network):
-    input = [float(i) / 255.0 for i in item]
+    #input = [float(i) / 255.0 for i in item]
+    input = [float(i) / 255.0 for i in item[1:]]
     predict = network.forward_propagate(input)
+    pixel = [input]
+    plt.imshow(numpy.reshape(numpy.asarray(pixel),(28,28)))
+    plt.show()
     showresult(predict)
+    print(item[0])
 
 
 def main():
     network = ann.ANN(784, 15, 10)
     #process_csv(recognize, "csv/test.csv", network)
-    for i in range(20):
+    for i in range(10):
         error = []
         process_csv(train, "csv/train.csv", network, error)
         D_hidden = network.d_hidden/len(error)
@@ -45,7 +51,7 @@ def main():
         print(cost)
         network.gradientDescent(D_input, D_hidden)
         network.resetD()
-    process_csv(recognize, "csv/test.csv", network)
+    process_csv(recognize, "csv/train.csv", network)
 
 
 if __name__ == "__main__":
