@@ -14,16 +14,20 @@ def process_csv(func, path, *args):
     with open(path) as file:
         file.readline()
         data = csv.reader(file)
+        ind = 0
         for row in data:
+            print(ind)
+            ind+=1
             func(row, *args)
 
 
-def train(example, network, error):
+def train(example, network):
     input = [float(i) / 255.0 for i in example[1:]]
     output = int(example[0])
     predict = network.forward_propagate(input)
-    error.append(network.error(predict, output))
-    network.back_propagate(output)
+    label = [0.0]*network.layers[-1].size
+    label[output]=1.0
+    network.back_propagate(label)
 
 
 def recognize(item, network):
@@ -38,20 +42,15 @@ def recognize(item, network):
 
 
 def main():
-    network = ann.ANN(784, 15, 10)
+    network = ann.DNN([784, 15, 10])
     #process_csv(recognize, "csv/test.csv", network)
-    for i in range(10):
+    for _ in range(10):
         error = []
-        process_csv(train, "csv/train.csv", network, error)
-        D_hidden = network.d_hidden/len(error)
-        #print(D_hidden)
-        D_input = network.d_input/len(error)
-        #print(D_input)
-        cost = sum(error)/len(error)
-        print(cost)
-        network.gradientDescent(D_input, D_hidden)
+        process_csv(train, "csv/train.csv", network)
+        print(network.cost())
+        network.gradientDescent()
         network.resetD()
-    process_csv(recognize, "csv/train.csv", network)
+    #process_csv(recognize, "csv/train.csv", network)
 
 
 if __name__ == "__main__":

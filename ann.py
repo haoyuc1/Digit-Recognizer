@@ -1,4 +1,152 @@
 import numpy as np
+import random
+import math
+
+def sigmoid(x):
+    return 1.0 / (1.0 + math.exp(-x))
+
+class Weight:
+    def __init__(self, size):
+        self.size = size
+        self.vals = []
+        self.cumulation = [0]*size
+        self.symmetryBreaking()
+
+    def symmetryBreaking(self):
+        epsilon_init = 0.12
+        self.vals = [random.random() * 2 * epsilon_init - epsilon_init for _ in range(self.size)]
+
+    def resetD(self):
+        self.cumulation = [0]*self.size
+
+    def update(self,alpha):
+        self.vals = [self.vals[i] - alpha*self.cumulation[i] for i in range(self.size)]
+
+class Layer:
+    def __init__(self, size):
+        self.size = size
+        self.vals = [0]*size
+        self.dvals = [0]*size
+        self.connected = {}
+        self.connected_back = {}
+
+    def input(self, vals):
+        if len(vals) == self.size:
+            self.vals = vals
+        else:
+            raise TypeError('Size {} not fix layer size {}'.format(len(vals),self.size))
+        
+    def feedback(self, dvals):
+        if len(dvals) == self.size:
+            self.dvals = dvals
+        else:
+            raise TypeError('Size {} not fix layer size {}'.format(len(dvals),self.size))
+    
+    def connect(self,layer):
+        if layer not in self.connected:
+            W_ls = [Weight(layer.size) for _ in range(self.size+1)]
+            self.connected[layer] = W_ls
+            layer.connect_back(self)
+        return self.connected[layer]
+
+    def connect_back(self,layer):
+        if layer not in self.connected_back:
+            self.connected_back[layer] = layer.connected[self]
+        return self.connected_back[layer]
+
+    
+    def forward(self,layer):
+        if layer not in self.connected:
+            self.connect(layer)
+        W_ls = self.connected[layer]
+        update_ls = [sigmoid(sum([W_ls[i].vals[j]*n for i,n in enumerate(self.vals+[1])])) for j in range(layer.size)]         
+        layer.input(update_ls)
+        #print(W_ls[0].vals[0])
+        return layer
+    
+    def backward(self,layer):
+        if layer not in self.connected_back:
+            raise TypeError("This layer haven\'t be connected")
+        W_ls = self.connected_back[layer]
+        update_ls = [sum([self.dvals[i]*W_ls[w_i].vals[i] for i in range(len(W_ls[w_i].vals))])*layer.vals[w_i]*(1-layer.vals[w_i]) for w_i in range(len(W_ls)-1)]              
+        layer.feedback(update_ls)
+        layer1 = layer.vals+[1]
+        for i in range(len(W_ls)):
+            for j in range(len(W_ls[i].vals)):
+                W_ls[i].cumulation[j] += layer1[i]*self.dvals[j]
+
+        return layer
+
+    def output(self):
+        return self.vals
+
+    def update(self,alpha):
+        for i in self.connected:
+            for w in self.connected[i]:
+                w.update(alpha)
+    
+    def resetD(self):
+        for i in self.connected:
+            for w in self.connected[i]:
+                w.resetD()
+
+
+
+class DNN:
+    def __init__(self, layers_size, learning_rate = 0.2, threshold = 0.97, lamda = 10):
+        self.alpha = learning_rate
+        self.lamda = lamda
+        self.threshold = threshold
+
+        self.layers = []
+        for i in layers_size:
+            self.layers.append(Layer(i))
+
+        self.m = 0
+        self.error = 0
+        
+    def forward_propagate(self,ip_data):
+        pre = None
+        for i,L in enumerate(self.layers):
+            if pre:
+                pre.forward(L)
+            else:
+                L.input(ip_data)
+            pre = L
+        return L.output()
+
+    def back_propagate(self,label):
+        if len(label) != self.layers[-1].size:
+            raise TypeError('Label size {} not fix output layer size {}'.format(len(label),self.layers[-1].size))
+        else:
+            self.layers[-1].feedback([self.layers[-1].vals[j] - label[j] for j in range(len(label))])
+            for i in reversed(range(1,len(self.layers))):
+                self.layers[i].backward(self.layers[i-1])
+        self.m+=1
+        #try:
+        er = []
+        for i in range(len(label)):
+            first = -label[i]*math.log(self.layers[-1].vals[i])
+            #try:
+            second = -(1-label[i])*math.log(1-self.layers[-1].vals[i])
+            #except:
+            #    print(self.layers[-1].vals[i])
+            er.append(first+second)
+        self.error+=sum(er)
+        # self.error += sum([-(label[i]*math.log(self.layers[-1].vals[i])+(1-label[i])*math.log(1-self.layers[-1].vals[i])) for i in range(len(label))])
+        #except Exception as e:
+
+    def gradientDescent(self):
+        for i in self.layers:
+            i.update(self.alpha)
+
+    def resetD(self):
+        for i in self.layers:
+            i.resetD()
+    
+    def cost(self):
+        return self.error/self.m
+        
 
 class ANN:
     def __init__(self, num_input, num_hidden, num_output, learning_rate = 0.2, threshold = 0.97, lamba = 10):
